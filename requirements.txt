@@ -1,0 +1,18 @@
+# Core Requirements (Required)
+Django==4.2.7
+Pillow==10.1.0
+asgiref==3.7.2
+sqlparse==0.4.4
+tzdata==2023.3
+
+# Optional - For PostgreSQL Database (if needed)
+# psycopg2-binary==2.9.9
+
+# Optional - For Environment Variables
+# python-dotenv==1.0.0
+
+# Optional - For Email Sending
+# django-smtp-ssl==1.0
+
+# Optional - For API Development (if needed later)
+# djangorestframework==3.14.0
