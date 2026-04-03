@@ -1,0 +1,15 @@
+{% extends 'gift/base.html' %}
+{% block content %}
+<div class="container my-5"><div class="row justify-content-center"><div class="col-md-6">
+    <div class="card"><div class="card-header bg-success text-white"><h4>Create Product</h4></div>
+    <div class="card-body"><form method="POST" enctype="multipart/form-data">{% csrf_token %}
+        <input type="text" name="name" class="form-control mb-3" placeholder="Product Name" required>
+        <input type="number" name="price" class="form-control mb-3" placeholder="Price" step="0.01" required>
+        <textarea name="description" class="form-control mb-3" rows="4" placeholder="Description" required></textarea>
+        <input type="number" name="stock" class="form-control mb-3" placeholder="Stock">
+        <input type="file" name="image" class="form-control mb-3" accept="image/*">
+        <button type="submit" class="btn btn-success">Create</button>
+        <a href="{% url 'admin_products' %}" class="btn btn-secondary">Cancel</a>
+    </form></div></div>
+</div></div></div>
+{% endblock %}

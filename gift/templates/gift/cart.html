@@ -1,0 +1,32 @@
+{% extends 'gift/base.html' %}
+{% block content %}
+<div class="container my-5">
+    <h2><i class="fas fa-shopping-cart"></i> Your Cart</h2>
+    {% if cart_items %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead><tr><th>Product</th><th>Price</th><th>Quantity</th><th>Total</th><th></th></tr></thead>
+            <tbody>
+                {% for item in cart_items %}
+                <tr>
+                    <td>{{ item.product.name }}</td>
+                    <td>₹{{ item.product.price }}</td>
+                    <td>
+                        <form method="POST" action="{% url 'update_cart' item.id %}" style="display:inline">
+                            {% csrf_token %}
+                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" style="width:70px">
+                            <button type="submit" class="btn btn-sm btn-info"><i class="fas fa-sync"></i></button>
+                        </form>
+                    </td>
+                    <td>₹{{ item.total_price }}</td>
+                    <td><a href="{% url 'remove_from_cart' item.id %}" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></a></td>
+                </tr>
+                {% endfor %}
+                <tr><td colspan="3" class="text-end"><strong>Grand Total:</strong></td><td><strong>₹{{ total }}</strong></td><td></td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="text-end"><a href="{% url 'checkout' %}" class="btn btn-success btn-lg"><i class="fas fa-credit-card"></i> Proceed to Checkout</a></div>
+    {% else %}<div class="alert alert-info">Your cart is empty. <a href="{% url 'home' %}">Continue Shopping</a></div>{% endif %}
+</div>
+{% endblock %}

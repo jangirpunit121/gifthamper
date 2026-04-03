@@ -1,0 +1,558 @@
+{% extends 'gift/base.html' %}
+{% block content %}
+<div class="container my-5">
+    <h2 class="mb-4"><i class="fas fa-truck"></i> Manage Orders</h2>
+    
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="fas fa-list"></i> All Orders ({{ orders|length }} orders)</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Mobile</th>
+                            <th>Address</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Update Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td><strong>#{{ order.id }}</strong></td>
+                            <td>
+                                <strong>{{ order.full_name }}</strong><br>
+                                <small class="text-muted">{{ order.email }}</small>
+                            </strong></td>
+                            <td>{{ order.mobile }}<br>
+                                <small class="text-muted">{{ order.created_at|date:"d M Y" }}</small>
+                            </strong></td>
+                            <td>
+                                {{ order.address|truncatewords:6 }}<br>
+                                <small>{{ order.city }}, {{ order.pincode }}</small>
+                            </strong></strong></td>
+                            <td><strong class="text-primary">₹{{ order.total_amount }}</strong></strong></td>
+                            <td>
+                                <span class="badge {% if order.status == 'pending' %}bg-warning{% elif order.status == 'confirmed' %}bg-info{% elif order.status == 'shipped' %}bg-primary{% elif order.status == 'delivered' %}bg-success{% else %}bg-danger{% endif %} px-3 py-2">
+                                    {{ order.get_status_display }}
+                                </span>
+                            </strong></strong></td>
+                            <td>
+                                <form method="POST" action="{% url 'admin_update_order' order.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <select name="status" class="form-select form-select-sm" style="width: 130px;" onchange="this.form.submit()">
+                                        <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                                        <option value="confirmed" {% if order.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                                        <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>Shipped</option>
+                                        <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                                        <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                    </select>
+                                </form>
+                            </strong></strong></td>
+                            <td>
+                                <!-- View Button - Click karne par hi modal khulega -->
+                                <button type="button" class="btn btn-info btn-sm view-order-btn" data-order-id="{{ order.id }}">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                <br>
+                                <a href="https://wa.me/91{{ order.mobile }}?text=Hello%20{{ order.full_name }}%2C%20Your%20order%20%23{{ order.id }}%20status%20is%20{{ order.status }}.%20For%20any%20query%20contact%20us." 
+                                   target="_blank" class="btn btn-success btn-sm mt-1">
+                                    <i class="fab fa-whatsapp"></i> WhatsApp
+                                </a>
+                            </strong></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <i class="fas fa-box-open fa-3x text-muted mb-3 d-block"></i>
+                                <h5>No orders found</h5>
+                                <p class="text-muted">Orders will appear here once customers place them.</p>
+                            </strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Container - Dynamic modal will be inserted here -->
+<div id="modalContainer"></div>
+
+<!-- Print Invoice Template - Hidden div for printing -->
+<div id="printTemplate" style="display: none;">
+    <div class="invoice-container">
+        <div class="invoice-header">
+            <h1><i class="fas fa-gift"></i> The Hamper Hub</h1>
+            <p>Your Trusted Gifting Partner</p>
+            <hr>
+        </div>
+        
+        <div class="invoice-title">
+            <h2>TAX INVOICE</h2>
+            <h3>Order #<span id="printOrderId"></span></h3>
+        </div>
+        
+        <div class="invoice-info">
+            <div class="info-section">
+                <h4>Customer Details</h4>
+                <p><strong>Name:</strong> <span id="printCustomerName"></span></p>
+                <p><strong>Email:</strong> <span id="printCustomerEmail"></span></p>
+                <p><strong>Mobile:</strong> <span id="printCustomerMobile"></span></p>
+            </div>
+            
+            <div class="info-section">
+                <h4>Delivery Address</h4>
+                <p id="printAddress"></p>
+                <p><strong>Google Maps:</strong> <span id="printMapLink"></span></p>
+            </div>
+            
+            <div class="info-section">
+                <h4>Order Details</h4>
+                <p><strong>Order Date:</strong> <span id="printOrderDate"></span></p>
+                <p><strong>Order Status:</strong> <span id="printOrderStatus"></span></p>
+            </div>
+        </div>
+        
+        <div class="invoice-items">
+            <h4>Order Items</h4>
+            <table class="print-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Product Name</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="printItemsTable"></tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" class="text-end"><strong>Grand Total:</strong></td>
+                        <td><strong id="printTotal"></strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        <div class="invoice-footer">
+            <hr>
+            <p>Thank you for shopping with The Hamper Hub!</p>
+            <p>For queries: +91 6263371071 | kashikajain186@gmail.com</p>
+            <p class="small">Computer generated invoice</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .address-box {
+        border-left: 4px solid #0dcaf0;
+    }
+    
+    .modal-xl {
+        max-width: 90%;
+    }
+    
+    @media (max-width: 768px) {
+        .modal-xl {
+            max-width: 95%;
+        }
+        .btn-sm {
+            font-size: 0.7rem;
+        }
+    }
+    
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .invoice-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: 'Segoe UI', Arial, sans-serif;
+    }
+    
+    .invoice-header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .invoice-header h1 {
+        color: #667eea;
+        margin-bottom: 5px;
+    }
+    
+    .invoice-title {
+        text-align: center;
+        margin-bottom: 20px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .invoice-title h2 {
+        color: #28a745;
+        margin-bottom: 5px;
+    }
+    
+    .invoice-info {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .info-section {
+        flex: 1;
+        min-width: 200px;
+        margin-bottom: 10px;
+    }
+    
+    .info-section h4 {
+        color: #667eea;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 5px;
+    }
+    
+    .info-section p {
+        margin-bottom: 5px;
+        font-size: 14px;
+    }
+    
+    .invoice-items {
+        margin-bottom: 20px;
+    }
+    
+    .invoice-items h4 {
+        margin-bottom: 10px;
+        color: #667eea;
+    }
+    
+    .print-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .print-table th, .print-table td {
+        border: 1px solid #dee2e6;
+        padding: 10px;
+        text-align: left;
+    }
+    
+    .print-table th {
+        background: #667eea;
+        color: white;
+    }
+    
+    .invoice-footer {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    .invoice-footer p {
+        margin-bottom: 5px;
+        font-size: 12px;
+    }
+    
+    .small {
+        font-size: 10px;
+        color: #6c757d;
+    }
+</style>
+
+<script>
+    // Order data stored in JavaScript
+    const ordersData = {
+        {% for order in orders %}
+        {{ order.id }}: {
+            id: {{ order.id }},
+            full_name: "{{ order.full_name|escapejs }}",
+            email: "{{ order.email|escapejs }}",
+            mobile: "{{ order.mobile|escapejs }}",
+            address: "{{ order.address|escapejs }}",
+            city: "{{ order.city|escapejs }}",
+            pincode: "{{ order.pincode|escapejs }}",
+            total_amount: "{{ order.total_amount }}",
+            status: "{{ order.status }}",
+            status_display: "{{ order.get_status_display }}",
+            created_at: "{{ order.created_at|date:'l, d F Y' }}",
+            created_time: "{{ order.created_at|time:'h:i A' }}",
+            updated_at: "{{ order.updated_at|date:'d M Y, h:i A' }}",
+            items: [
+                {% for item in order.items.all %}
+                {
+                    name: "{{ item.product.name|escapejs }}",
+                    price: "{{ item.price }}",
+                    quantity: {{ item.quantity }},
+                    total: "{{ item.total_price }}"
+                },
+                {% endfor %}
+            ]
+        },
+        {% endfor %}
+    };
+
+    // Function to show modal with order details
+    function showOrderModal(orderId) {
+        const order = ordersData[orderId];
+        if (!order) return;
+        
+        // Build items HTML
+        let itemsHtml = '';
+        order.items.forEach((item, index) => {
+            itemsHtml += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td><strong>${item.name}</strong></td>
+                    <td>₹${item.price}</td>
+                    <td>${item.quantity}</td>
+                    <td><strong>₹${item.total}</strong></td>
+                </tr>
+            `;
+        });
+        
+        // Status badge class
+        let statusClass = 'bg-warning';
+        if (order.status === 'confirmed') statusClass = 'bg-info';
+        else if (order.status === 'shipped') statusClass = 'bg-primary';
+        else if (order.status === 'delivered') statusClass = 'bg-success';
+        else if (order.status === 'cancelled') statusClass = 'bg-danger';
+        
+        // Build modal HTML
+        const modalHtml = `
+            <div class="modal fade" id="orderModal${orderId}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <h5 class="modal-title text-white">
+                                <i class="fas fa-receipt"></i> Complete Order Details - #${order.id}
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
+                            <!-- Order Status Bar -->
+                            <div class="alert alert-info mb-4">
+                                <div class="row text-center">
+                                    <div class="col-md-3">
+                                        <i class="fas fa-check-circle ${order.status != 'cancelled' ? 'text-success' : 'text-muted'} fa-2x"></i>
+                                        <p class="mb-0 small mt-2">Order Placed</p>
+                                        <small>${order.created_at.split(',')[0]}</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <i class="fas fa-check-circle ${(order.status == 'confirmed' || order.status == 'shipped' || order.status == 'delivered') ? 'text-success' : 'text-muted'} fa-2x"></i>
+                                        <p class="mb-0 small mt-2">Confirmed</p>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <i class="fas fa-truck ${(order.status == 'shipped' || order.status == 'delivered') ? 'text-success' : 'text-muted'} fa-2x"></i>
+                                        <p class="mb-0 small mt-2">Shipped</p>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <i class="fas fa-home ${order.status == 'delivered' ? 'text-success' : 'text-muted'} fa-2x"></i>
+                                        <p class="mb-0 small mt-2">Delivered</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-primary text-white">
+                                            <i class="fas fa-user"></i> Customer Information
+                                        </div>
+                                        <div class="card-body">
+                                            <table class="table table-sm table-borderless">
+                                                <tr><th width="35%">Full Name:</th><td><strong>${order.full_name}</strong></td></tr>
+                                                <tr><th>Email:</th><td>${order.email}</td></tr>
+                                                <tr><th>Mobile:</th><td><strong>${order.mobile}</strong> 
+                                                    <a href="https://wa.me/91${order.mobile}" target="_blank" class="btn btn-success btn-sm ms-2"><i class="fab fa-whatsapp"></i> Chat</a>
+                                                    <a href="tel:${order.mobile}" class="btn btn-primary btn-sm ms-1"><i class="fas fa-phone"></i> Call</a>
+                                                </td></tr>
+                                                <tr><th>Order Date:</th><td>${order.created_at}<br><small class="text-muted">${order.created_time}</small></td></tr>
+                                                <tr><th>Status:</th><td><span class="badge ${statusClass} fs-6">${order.status_display}</span></td></tr>
+                                                <tr><th>Last Updated:</th><td>${order.updated_at}</td></tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-info text-white">
+                                            <i class="fas fa-map-marker-alt"></i> Delivery Address
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="address-box p-3 bg-light rounded">
+                                                <p class="mb-1"><strong>${order.full_name}</strong></p>
+                                                <p class="mb-1">${order.address}</p>
+                                                <p class="mb-1">${order.city} - ${order.pincode}</p>
+                                                <p class="mb-0"><i class="fas fa-phone"></i> ${order.mobile}</p>
+                                            </div>
+                                            <a href="https://maps.google.com/?q=${encodeURIComponent(order.address + ', ' + order.city + ', ' + order.pincode)}" 
+                                               target="_blank" class="btn btn-outline-info btn-sm mt-2">
+                                                <i class="fas fa-map"></i> View on Google Maps
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mb-3">
+                                <div class="card-header bg-success text-white">
+                                    <i class="fas fa-boxes"></i> Order Items
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead class="table-light">
+                                                <tr><th>#</th><th>Product Name</th><th>Price</th><th>Quantity</th><th>Total</th></tr>
+                                            </thead>
+                                            <tbody>${itemsHtml}</tbody>
+                                            <tfoot class="table-active">
+                                                <tr><td colspan="4" class="text-end"><strong>Subtotal:</strong></td><td><strong>₹${order.total_amount}</strong></td></tr>
+                                                <tr><td colspan="4" class="text-end"><strong>Delivery:</strong></td><td><strong>₹0 (Free)</strong></td></tr>
+                                                <tr class="table-success"><td colspan="4" class="text-end"><strong>Grand Total:</strong></td><td><strong class="fs-5">₹${order.total_amount}</strong></td></tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-header bg-warning">
+                                    <i class="fas fa-bolt"></i> Quick Actions
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-md-4 mb-2">
+                                            <a href="https://wa.me/91${order.mobile}?text=Hello%20${order.full_name}%2C%20Your%20order%20%23${order.id}%20has%20been%20${order.status}.%20Thank%20you!" 
+                                               target="_blank" class="btn btn-success w-100">
+                                                <i class="fab fa-whatsapp"></i> WhatsApp Customer
+                                            </a>
+                                        </div>
+                                        <div class="col-md-4 mb-2">
+                                            <a href="tel:${order.mobile}" class="btn btn-primary w-100">
+                                                <i class="fas fa-phone"></i> Call Customer
+                                            </a>
+                                        </div>
+                                        <div class="col-md-4 mb-2">
+                                            <button class="btn btn-secondary w-100" onclick="printInvoiceFromData(${order.id})">
+                                                <i class="fas fa-print"></i> Print Invoice
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById(`orderModal${orderId}`);
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add modal to container
+        document.getElementById('modalContainer').innerHTML = modalHtml;
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById(`orderModal${orderId}`));
+        modal.show();
+    }
+    
+    // Print invoice function
+    function printInvoiceFromData(orderId) {
+        const order = ordersData[orderId];
+        if (!order) return;
+        
+        // Build items HTML for print
+        let itemsHtml = '';
+        order.items.forEach((item, index) => {
+            itemsHtml += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${item.name}</td>
+                    <td>₹${item.price}</td>
+                    <td>${item.quantity}</td>
+                    <td>₹${item.total}</td>
+                </tr>
+            `;
+        });
+        
+        // Fill print template
+        document.getElementById('printOrderId').innerText = order.id;
+        document.getElementById('printCustomerName').innerText = order.full_name;
+        document.getElementById('printCustomerEmail').innerText = order.email;
+        document.getElementById('printCustomerMobile').innerText = order.mobile;
+        document.getElementById('printAddress').innerHTML = `${order.address}<br>${order.city} - ${order.pincode}`;
+        document.getElementById('printMapLink').innerHTML = `https://maps.google.com/?q=${encodeURIComponent(order.address + ', ' + order.city + ', ' + order.pincode)}`;
+        document.getElementById('printOrderDate').innerText = order.created_at;
+        document.getElementById('printOrderStatus').innerText = order.status_display;
+        document.getElementById('printItemsTable').innerHTML = itemsHtml;
+        document.getElementById('printTotal').innerHTML = `₹${order.total_amount}`;
+        
+        // Create print window
+        const printContent = document.getElementById('printTemplate').innerHTML;
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Invoice #${order.id} - The Hamper Hub</title>
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px 20px; background: white; }
+                    .invoice-container { max-width: 800px; margin: 0 auto; padding: 20px; background: white; }
+                    .invoice-header { text-align: center; margin-bottom: 20px; }
+                    .invoice-header h1 { color: #667eea; margin-bottom: 5px; }
+                    .invoice-title { text-align: center; margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 8px; }
+                    .invoice-title h2 { color: #28a745; margin-bottom: 5px; }
+                    .invoice-info { display: flex; flex-wrap: wrap; justify-content: space-between; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; }
+                    .info-section { flex: 1; min-width: 200px; margin-bottom: 10px; }
+                    .info-section h4 { color: #667eea; margin-bottom: 10px; border-bottom: 1px solid #dee2e6; padding-bottom: 5px; }
+                    .info-section p { margin-bottom: 5px; font-size: 14px; }
+                    .print-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                    .print-table th, .print-table td { border: 1px solid #dee2e6; padding: 10px; text-align: left; }
+                    .print-table th { background: #667eea; color: white; }
+                    .invoice-footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; }
+                    .invoice-footer p { margin-bottom: 5px; font-size: 12px; }
+                    .small { font-size: 10px; color: #6c757d; }
+                    @media print { body { padding: 0; margin: 0; } }
+                </style>
+            </head>
+            <body>${printContent}<script>window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 1000); };<\/script></body>
+            </html>
+        `);
+        printWindow.document.close();
+    }
+    
+    // Attach click event to all view buttons
+    document.querySelectorAll('.view-order-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const orderId = this.getAttribute('data-order-id');
+            showOrderModal(orderId);
+        });
+    });
+</script>
+{% endblock %}

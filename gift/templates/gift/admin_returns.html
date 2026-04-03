@@ -1,0 +1,16 @@
+{% extends 'gift/base.html' %}
+{% block content %}
+<div class="container my-5">
+    <h2>Return Requests</h2>
+    <div class="table-responsive"><table class="table">
+        <thead><tr><th>Order ID</th><th>Customer</th><th>Mobile</th><th>Reason</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>{% for return_req in returns %}<tr><td>#{{ return_req.order.id }}</td><td>{{ return_req.user.username }}</td><td>{{ return_req.user.mobile }}</td><td>{{ return_req.reason|truncatewords:10 }}</td>
+        <td><span class="badge bg-{% if return_req.status == 'pending' %}warning{% elif return_req.status == 'approved' %}success{% else %}danger{% endif %}">{{ return_req.get_status_display }}</span></td>
+        <td><form method="POST" action="{% url 'admin_update_return' return_req.id %}">{% csrf_token %}<select name="status" onchange="this.form.submit()">
+            <option value="pending" {% if return_req.status == 'pending' %}selected{% endif %}>Pending</option>
+            <option value="approved" {% if return_req.status == 'approved' %}selected{% endif %}>Approved</option>
+            <option value="rejected" {% if return_req.status == 'rejected' %}selected{% endif %}>Rejected</option>
+        </select></form></td></tr>{% empty %}<tr><td colspan="6">No return requests</td></tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+{% endblock %}

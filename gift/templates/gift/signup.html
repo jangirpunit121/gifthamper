@@ -1,0 +1,44 @@
+{% extends 'gift/base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white text-center">
+                    <h3><i class="fas fa-user-plus"></i> Signup - The Hamper Hub</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="mobile" class="form-label">Mobile Number</label>
+                            <input type="tel" class="form-control" id="mobile" name="mobile" pattern="[0-9]{10}" required>
+                            <small class="text-muted">Enter 10-digit mobile number</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Signup</button>
+                    </form>
+                    <hr>
+                    <p class="text-center">Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends 'gift/base.html' %}
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center"><div class="col-md-6">
+        <div class="card"><div class="card-header bg-warning"><h4>Request Return for Order #{{ order.id }}</h4></div>
+        <div class="card-body">
+            <form method="POST">{% csrf_token %}
+                <div class="mb-3"><label>Reason for Return</label><textarea name="reason" class="form-control" rows="4" required></textarea></div>
+                <button type="submit" class="btn btn-warning">Submit Request</button>
+                <a href="{% url 'my_orders' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div></div>
+    </div></div>
+</div>
+{% endblock %}

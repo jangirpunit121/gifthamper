@@ -1,0 +1,29 @@
+{% extends 'gift/base.html' %}
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card"><div class="card-header bg-primary text-white"><h4>Delivery Details</h4></div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3"><input type="text" name="full_name" class="form-control" placeholder="Full Name" value="{{ user.get_full_name|default:user.username }}" required></div>
+                    <div class="row"><div class="col-md-6 mb-3"><input type="email" name="email" class="form-control" placeholder="Email" value="{{ user.email }}" required></div>
+                    <div class="col-md-6 mb-3"><input type="tel" name="mobile" class="form-control" placeholder="Mobile" value="{{ user.mobile }}" required></div></div>
+                    <div class="mb-3"><textarea name="address" class="form-control" rows="3" placeholder="Full Address" required></textarea></div>
+                    <div class="row"><div class="col-md-6 mb-3"><input type="text" name="city" class="form-control" placeholder="City" required></div>
+                    <div class="col-md-6 mb-3"><input type="text" name="pincode" class="form-control" placeholder="Pincode" required></div></div>
+                    <button type="submit" class="btn btn-success w-100">Place Order</button>
+                </form>
+            </div></div>
+        </div>
+        <div class="col-md-5">
+            <div class="card"><div class="card-header bg-info text-white"><h4>Order Summary</h4></div>
+            <div class="card-body">
+                {% for item in cart_items %}<p><strong>{{ item.product.name }}</strong> x {{ item.quantity }} = ₹{{ item.total_price }}</p>{% endfor %}
+                <hr><h5>Total: ₹{{ total }}</h5>
+            </div></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

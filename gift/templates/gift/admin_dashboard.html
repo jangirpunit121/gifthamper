@@ -1,0 +1,17 @@
+{% extends 'gift/base.html' %}
+{% block content %}
+<div class="container my-5">
+    <h2 class="text-center mb-4">Admin Dashboard</h2>
+    <div class="row">
+        <div class="col-md-3 mb-3"><div class="card bg-primary text-white text-center p-3"><i class="fas fa-calendar-day fa-3x"></i><h3>{{ todays_orders }}</h3><p>Today's Orders</p></div></div>
+        <div class="col-md-3 mb-3"><div class="card bg-success text-white text-center p-3"><i class="fas fa-shopping-cart fa-3x"></i><h3>{{ total_orders }}</h3><p>Total Orders</p></div></div>
+        <div class="col-md-3 mb-3"><div class="card bg-warning text-white text-center p-3"><i class="fas fa-clock fa-3x"></i><h3>{{ pending_orders }}</h3><p>Pending Orders</p></div></div>
+        <div class="col-md-3 mb-3"><div class="card bg-danger text-white text-center p-3"><i class="fas fa-undo fa-3x"></i><h3>{{ pending_returns }}</h3><p>Return Requests</p></div></div>
+        <div class="col-md-3 mb-3"><div class="card bg-info text-white text-center p-3"><i class="fas fa-boxes fa-3x"></i><h3>{{ total_products }}</h3><p>Products</p></div></div>
+        <div class="col-md-3 mb-3"><div class="card bg-dark text-white text-center p-3"><i class="fas fa-users fa-3x"></i><h3>{{ total_users }}</h3><p>Users</p></div></div>
+    </div>
+    <div class="card"><div class="card-header bg-dark text-white"><h5>Recent Orders</h5></div>
+    <div class="card-body"><div class="table-responsive"><table class="table"> <thead><tr><th>ID</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+    <tbody>{% for order in recent_orders %}<tr><td>#{{ order.id }}</td><td>{{ order.user.username }}</td><td>₹{{ order.total_amount }}</td><td><span class="badge bg-{% if order.status == 'pending' %}warning{% else %}success{% endif %}">{{ order.get_status_display }}</span></td><td>{{ order.created_at|date:"d M Y" }}</td></tr>{% empty %}<tr><td colspan="5">No orders</td></tr>{% endfor %}</tbody></table></div></div></div>
+</div>
+{% endblock %}

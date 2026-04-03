@@ -1,0 +1,71 @@
+{% extends 'gift/base.html' %}
+{% block content %}
+<div class="container my-5">
+    <h2><i class="fas fa-box"></i> My Orders</h2>
+    {% if orders %}
+        {% for order in orders %}
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between">
+                <strong>Order #{{ order.id }}</strong>
+                <span class="badge {% if order.status == 'pending' %}bg-warning{% elif order.status == 'confirmed' %}bg-info{% elif order.status == 'shipped' %}bg-primary{% elif order.status == 'delivered' %}bg-success{% else %}bg-danger{% endif %}">
+                    {{ order.get_status_display }}
+                </span>
+            </div>
+            <div class="card-body">
+                <p><strong>Date:</strong> {{ order.created_at|date:"d M Y, h:i A" }}</p>
+                <p><strong>Total Amount:</strong> ₹{{ order.total_amount }}</p>
+                <p><strong>Delivery Address:</strong> {{ order.full_name }}, {{ order.address }}, {{ order.city }}-{{ order.pincode }}, {{ order.mobile }}</p>
+                <h6>Items:</h6>
+                <ul>{% for item in order.items.all %}<li>{{ item.product.name }} x {{ item.quantity }} = ₹{{ item.total_price }}</li>{% endfor %}</ul>
+                
+                <!-- Return Request Button - Sirf tab show hoga jab order DELIVERED ho -->
+                {% if order.status == 'delivered' %}
+                    {% with return_exists=order.return_requests.exists %}
+                        {% if not return_exists %}
+                            <a href="{% url 'request_return' order.id %}" class="btn btn-warning mt-2">
+                                <i class="fas fa-undo"></i> Request Return
+                            </a>
+                        {% else %}
+                            {% for return_req in order.return_requests.all %}
+                                {% if return_req.status == 'pending' %}
+                                    <div class="alert alert-warning mt-2">
+                                        <i class="fas fa-clock"></i> Return request pending for approval
+                                    </div>
+                                {% elif return_req.status == 'approved' %}
+                                    <div class="alert alert-success mt-2">
+                                        <i class="fas fa-check-circle"></i> Return request approved! Our team will contact you.
+                                    </div>
+                                {% elif return_req.status == 'rejected' %}
+                                    <div class="alert alert-danger mt-2">
+                                        <i class="fas fa-times-circle"></i> Return request rejected. Contact support for more info.
+                                    </div>
+                                {% elif return_req.status == 'completed' %}
+                                    <div class="alert alert-info mt-2">
+                                        <i class="fas fa-check-double"></i> Return completed successfully!
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                {% endif %}
+                
+                <!-- Agar order cancelled ya pending hai toh return button nahi dikhega -->
+                {% if order.status == 'cancelled' %}
+                    <div class="alert alert-secondary mt-2">
+                        <i class="fas fa-ban"></i> This order has been cancelled. Return not available.
+                    </div>
+                {% endif %}
+                
+                {% if order.status == 'pending' or order.status == 'confirmed' or order.status == 'shipped' %}
+                    <div class="alert alert-info mt-2">
+                        <i class="fas fa-truck"></i> Return request can only be raised after order is delivered.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info">No orders yet! <a href="{% url 'home' %}">Shop Now</a></div>
+    {% endif %}
+</div>
+{% endblock %}

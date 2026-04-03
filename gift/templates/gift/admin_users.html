@@ -1,0 +1,10 @@
+{% extends 'gift/base.html' %}
+{% block content %}
+<div class="container my-5">
+    <h2>All Users</h2>
+    <div class="table-responsive"><table class="table">
+        <thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Mobile</th><th>Staff</th><th>Joined</th></tr></thead>
+        <tbody>{% for user in users %}<tr><td>{{ user.id }}</td><td>{{ user.username }}</td><td>{{ user.email }}</td><td>{{ user.mobile }}</td><td>{% if user.is_staff %}Admin{% else %}User{% endif %}</td><td>{{ user.date_joined|date:"d M Y" }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+{% endblock %}
